@@ -20,7 +20,7 @@
 is_discrete <- function(x, na.rm = TRUE){
   x <- x[is.na(x) == FALSE] ## Remove NAs
   is.factor(x) || is.character(x) || is.logical(x) ||
-    (length(unique(x)) < 25L & is.numeric(x))
+    (length(unique(x)) < 25 & is.numeric(x))
 }
 
 #' Check if a vector diverges a value
@@ -132,6 +132,7 @@ color_scale_of <- function(x, mid_pt = 0, limits = NULL, ...){
 #' problem_type(mtcars$cyl) ## Numeric column, labeled as discrete, because less than 25 unique values
 #' problem_type(letters)
 problem_type <- function(y){
+  if(all(is.null(y) | is.na(y)))  return("No y provided")
   if(is_discrete(y) == TRUE) return("classification")
   if(is.numeric(y)  == TRUE) return("regression")
   stop("y was expected as a with less than 25 unique values, or continuous numeric; indicating a classification or regression problem respectivly.")
@@ -150,10 +151,10 @@ problem_type <- function(y){
 #' @examples
 #' library(cheem)
 #' 
-#' does_contain_nonnumeric(mtcars$mpg)
-#' does_contain_nonnumeric(rownames(mtcars)) ## Meaningful info to use in tooltip
-#' does_contain_nonnumeric(rownames(cars)) ## Assume no meaningful info to use in tooltip
-does_contain_nonnumeric <- function(x){
+#' contains_nonnumeric(mtcars$mpg)
+#' contains_nonnumeric(rownames(mtcars)) ## Meaningful info to use in tooltip
+#' contains_nonnumeric(rownames(cars)) ## Assume no meaningful info to use in tooltip
+contains_nonnumeric <- function(x){
   suppressWarnings(any(is.na(as.numeric(as.character(x)))))
 }
 
@@ -184,7 +185,7 @@ does_contain_nonnumeric <- function(x){
 rnorm_from <- function(
   data, n_obs = 1, var_coeff = 1, method = c("pearson", "kendall", "spearman")
 ){
-  .mns <- apply(data, 2L, stats::median)
+  .mns <- apply(data, 2, stats::median)
   .cov <- stats::cov(data, method = match.arg(method))
   diag(.cov) <- var_coeff * diag(.cov) ## Decrease univariate variance if needed.
   ## person numeric, not spearman ranked/ordinal
@@ -221,10 +222,10 @@ rnorm_from <- function(
 #' x <- 1:2000
 #' plot(x, sapply(x, linear_tform), col = "blue")
 linear_tform = function(
-  n, appox_max_n = 5000L, ceiling = 1, floor = .3
+  n, appox_max_n = 5000, ceiling = 1, floor = .3
 ){
-  vec <- 1L - min(n / appox_max_n, 1L)
-  ceiling * (floor + (1L - floor) * vec)
+  vec <- 1 - min(n / appox_max_n, 1)
+  ceiling * (floor + (1 - floor) * vec)
 }
 
 #' Logistic function to help set alpha opacity
@@ -253,8 +254,8 @@ linear_tform = function(
 logistic_tform = function(
   n, mid_pt = 600, k_attenuation = 5, ceiling = 1, floor = .3
 ){
-  vec <- 1L / (1L + exp(k_attenuation / 1000L * (n - mid_pt)))
-  ceiling * (floor + (1L - floor) * vec)
+  vec <- 1 / (1 + exp(k_attenuation / 1000 * (n - mid_pt)))
+  ceiling * (floor + (1 - floor) * vec)
 }
 
 
@@ -273,8 +274,11 @@ logistic_tform = function(
 #' @examples
 #' library(cheem)
 #' 
-#' ## Coerce a numeric index to logical:
+#' ## Coerce a numeric index to logical
 #' as_logical_index(c(1, 4:10, 15), nrow(mtcars))
+#' 
+#' ## Logical indexs are unchanged
+#' as_logical_index(mtcars$mpg > 30, nrow(mtcars))
 as_logical_index <- function(index, n){
   if(is.logical(index) & length(index) != n)
     stop("as_logical_index: `index` was logical, but not of length `n`.")
@@ -293,10 +297,17 @@ as_logical_index <- function(index, n){
 #' Send a message if the 4th chunk of the package version is 9000.
 #' @param text A character string to message() if package version is 9000.
 devMessage <- function(text){
-  version4 <-  utils::packageVersion(pkg = "cheem")[1L, 4L]
+  version4 <-  utils::packageVersion(pkg = "cheem")[1, 4]
   if(is.na(version4) == FALSE)
-    if(version4 == 9000L)
+    if(version4 == 9000)
       message(paste0("devMessage: ", text))
+  
+  ## Attempt to stop inaccurate warning (used in shiny app)
+  if(F){
+    dummy <- DT::datatable()
+    dummy <- shinycssloaders::withSpinner()
+    dummy <- shinythemes::shinytheme()
+  }
 }
 
 #' Evaluate if development
@@ -304,9 +315,9 @@ devMessage <- function(text){
 #' Evaluate the expression if the 4th chunk of the package version is 9000.
 #' @param expr A character string to message() if package version is 9000.
 ifDev <- function(expr){
-  version4 <- utils::packageVersion(pkg = "cheem")[1L, 4L]
+  version4 <- utils::packageVersion(pkg = "cheem")[1, 4]
   if(is.na(version4) == FALSE)
-    if(version4 == 9000L)
+    if(version4 == 9000)
       eval(expr)
 }
 

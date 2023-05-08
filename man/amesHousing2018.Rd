@@ -22,7 +22,9 @@ De Cock, D. (2011). "Ames, Iowa: Alternative to the Boston Housing Data as an En
 {Kaggle, Ames Housing Dataset}
 \url{https://www.kaggle.com/prevek18/ames-housing-dataset}
 
-\strong{Replicating this dataset:}\preformatted{if(FALSE) ## Don't accidentally open the URL.
+\strong{Replicating this dataset:}
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{if(FALSE) ## Don't accidentally open the URL.
   browseURL("https://www.kaggle.com/prevek18/ames-housing-dataset")
 ames <- readr::read_csv("./buildignore/AmesHousing.csv")
 amesHousing2018_raw <- data.frame(ames)
@@ -73,8 +75,9 @@ amesHousing2018_NorthAmes <- amesHousing2018_thin[r_idx, ]
 amesHousing2018_NorthAmes$SubclassMS <- factor(
   amesHousing2018_NorthAmes$SubclassMS,
   unique(amesHousing2018_NorthAmes$SubclassMS))
-## save(amesHousing2018_NorthAmes, file = "./data/amesHousing2018_NorthAmes.rda")
-}
+if(F)\{ ## Don't accidentally save
+  save(amesHousing2018_NorthAmes, file = "./data/amesHousing2018_NorthAmes.rda")
+}\if{html}{\out{</div>}}
 }
 \usage{
 amesHousing2018
@@ -130,23 +133,29 @@ in yards (0.914m)
 library(cheem)
 
 ## Regression setup:
-dat  <- amesHousing2018_NorthAmes[1:100, ]
+dat  <- amesHousing2018_NorthAmes
 X    <- dat[, 1:9]
 Y    <- dat$SalePrice
 clas <- dat$SubclassMS
 
-## Model, treeSHAP explanation, cheem list:
-rf_fit  <- default_rf(X, Y)
-shap_df <- attr_df_treeshap(rf_fit, X, noisy = FALSE)
-this_ls <- cheem_ls(X, Y, class = clas,
-                    model = rf_fit,
-                    attr_df = shap_df)
+## Cheem list
+ames_rf_chm <- cheem_ls(X, Y, ames_rf_shap, ames_rf_pred, clas,
+                        label = "North Ames, RF, SHAP")
+## Cheem visuals
+if(interactive()){
+  prim <- 1
+  comp <- 2
+  global_view(ames_rf_chm, primary_obs = prim, comparison_obs = comp)
+  bas <- sug_basis(ames_rf_chm, prim, comp)
+  mv  <- sug_manip_var(ames_rf_chm, primary_obs = 1, comparison_obs = 2)
+  ggt <- radial_cheem_tour(ames_rf_chm, basis = bas, manip_var = mv)
+  animate_plotly(ggt)
+}
 
-## Visualize:
-global_view(this_ls)
-
-## Save for used with shiny app (expects .rds):
-if(FALSE) ## Don't accidentally save.
-  saveRDS(this_ls, "./my_cheem_ls.rds")
+## Save for use with shiny app (expects an rds file)
+if(FALSE){ ## Don't accidentally save.
+  saveRDS(ames_rf_chm, "./NAmes_rf_tshap.rds")
+  run_app() ## Select the saved rds file from the data drop down.
+}
 }
 \keyword{datasets}

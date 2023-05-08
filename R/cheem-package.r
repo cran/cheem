@@ -17,13 +17,9 @@
 #' 
 #' @name cheem
 #' @docType package
-#' @seealso [cheem_ls()] [run_app()]
+#' @seealso [cheem_ls()] or [run_app()] for help getting started
 NULL
 
-## usethis namespace: start
-#' @importFrom Rcpp sourceCpp
-## usethis namespace: end
-NULL
 
 ## Print message -----
 #### prints upon first attaching the package
@@ -33,7 +29,9 @@ NULL
   packageStartupMessage("Please share bugs, suggestions, and feature requests at:")
   packageStartupMessage("https://github.com/nspyrison/cheem/issues/")
   packageStartupMessage("--------------------------------------------------------")
+  conflicted::conflict_prefer("run_app", "cheem", quiet = TRUE)
 }
+
 
 ## Exports ------
 #' @importFrom magrittr %>%
@@ -42,8 +40,10 @@ magrittr::`%>%`
 NULL ## Required for roxygen2 to work, do not delete
 
 ## globals.R -----
-globalVariables(c("Feature", "split_index", "tree_index", ".", "node_parent", 
-                  "default_left", "decision_type", "position", "cumulative",
-                  "prev", "text", "contribution", "var_value", "shap_value", 
-                  "reorder", "variable", "importance", "Tree",  "Missing",
-                  "Node", "Cover", "Yes", "No", 'Prediction', 'Decision.type'))
+globalVariables(c(
+  "Feature", "split_index", "tree_index", ".", "node_parent",
+  "default_left", "decision_type", "position", "cumulative",
+  "prev", "text", "contribution", "var_value", "shap_value",
+  "reorder", "variable", "importance", "Tree", "Missing",
+  "Node", "Cover", "Yes", "No", "Prediction", "Decision.type"
+  ))

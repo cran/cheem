@@ -28,7 +28,9 @@ or 'Milk"
 \source{
 {Monash University, Introduction to Machine Learning course} \url{https://iml.numbat.space/}
 
-\strong{Replicating this dataset:}\preformatted{if(FALSE) ## Don't accidentally open the URL.
+\strong{Replicating this dataset:}
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{if(FALSE) ## Don't accidentally open the URL.
   browseURL("https://iml.numbat.space/")
 ## Accessed Jan 2022
 chocolates <- readr::read_csv("https://iml.numbat.space/data/chocolates.csv")
@@ -36,8 +38,9 @@ chocolates <- data.frame(chocolates)
 chocolates[, 2] <- factor(chocolates[, 2])
 chocolates[, 3] <- factor(chocolates[, 3])
 chocolates[, 4] <- factor(chocolates[, 4])
-## save(chocolates, file = "./data/chocolates.rda")
-}
+if(F)\{ ## Don't accidentally save
+  save(chocolates, file = "./data/chocolates.rda")
+}\if{html}{\out{</div>}}
 }
 \usage{
 chocolates
@@ -52,23 +55,30 @@ Units of measurement are listed in the variable name.
 \examples{
 library(cheem)
 
-## Classification setup:
+## Classification setup
 X    <- chocolates[, 5:14]
-Y    <- as.integer(chocolates$Type)
+Y    <- chocolates$Type
 clas <- chocolates$Type
 
-## Model, treeSHAP explanation, cheem list:
-rf_fit  <- default_rf(X, Y)
-shap_df <- attr_df_treeshap(rf_fit, X, noisy = FALSE)
-this_ls <- cheem_ls(X, Y, class = clas,
-                    model = rf_fit,
-                    attr_df = shap_df)
+## Cheem
+choc_chm <- cheem_ls(X, Y, chocolates_svm_shap, chocolates_svm_pred, clas,
+                     label = "Chocolates, LM, shap")
 
-## Visualize:
-global_view(this_ls)
+## Save for use with shiny app (expects an rds file)
+if(FALSE){ ## Don't accidentally save.
+  saveRDS(choc_chm, "./chocolates_svm_shap.rds")
+  run_app() ## Select the saved rds file from the data dropdown.
+}
 
-## Save for used with shiny app (expects .rds):
-if(FALSE) ## Don't accidentally save.
-  saveRDS(this_ls, "./my_cheem_ls.rds")
+## Cheem visuals
+if(interactive()){
+  prim <- 1
+  comp <- 2
+  global_view(peng_chm, primary_obs = prim, comparison_obs = comp)
+  bas <- sug_basis(peng_xgb_shap, prim, comp)
+  mv  <- sug_manip_var(peng_xgb_shap, primary_obs = 1, comparison_obs = 2)
+  ggt <- radial_cheem_tour(peng_chm, basis = bas, manip_var = mv)
+  animate_plotly(ggt)
+}
 }
 \keyword{datasets}

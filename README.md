@@ -53,6 +53,15 @@ We started by looking at the model-agnostic local explanation _tree SHAP_  appli
 
 [Explanatory Model Analysis (ebook)](https://ema.drwhy.ai/shapley.html#SHAPRcode) [DALEX CRAN page](https://CRAN.R-project.org/package=DALEX) [spinifex CRAN page](https://cran.r-project.org/package=spinifex) [treeshap GitHub page](https://github.com/ModelOriented/treeshap)
 
+## Package build workflow
+
+- devtools::document() ## documentation changes
+- pkgdown::build_site() ## packagedown site changes (documentation, vignettes, readme)
+- message("Manually do: Build tab > Install and Restart") ## build package
+- rhub::check_for_cran() ## check package
+- devtools::submit_cran() ## Submit to CRAN
+
+
 <!-- CSS change figure width to 100% -->
 <style>
   img{width: 100%;}

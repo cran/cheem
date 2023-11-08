@@ -1,10 +1,3 @@
-# Model fits  -----
-
-
-
-
-
-
 # cheem workflow -----
 
 #' Extract higher level model performance statistics
@@ -48,15 +41,14 @@ model_performance <- function(
     .r2     <- 1 - .rse
     .adj_r2 <- 1 - (.mse / stats::var(y))
     
-    ## There are a whole host of other performance measurements that  
-    ## some analysts may prefer. Hoeveer, it's Hard to unify across models 
-    ## and use cases.
-    data.frame(label     = label,
-               mse       = .mse,
-               rmse      = .rmse,
-               mad       = .mad,
-               r2        = .r2,
-               adj_r2    = .adj_r2)
+    ## There are a whole host of other performance measurements,
+    ## but that's not the contribution/focus of cheem.
+    data.frame(label  = label,
+               mse    = .mse,
+               rmse   = .rmse,
+               mad    = .mad,
+               r2     = .r2,
+               adj_r2 = .adj_r2)
   },
   error = function(cond){
     data.frame(label  = label,
@@ -71,9 +63,6 @@ model_performance <- function(
 #' Produces the plot data.frame of 1 layer. consumed downstream in cheem_ls.
 #' 
 #' @param x The explanatory variables of the model.
-#' @param basis_type The type of basis used to approximate the data and 
-#' attribution space from. Defaults to "pca". 
-#' Expects "pca" or "olda" (requires `class`).
 #' @param class Optional, (n, 1) vector, a variable to group points by. 
 #' This can be the same as or different from `y`, the target variable.
 #' @param label Optionally provide a character label to store reminder 
@@ -91,27 +80,21 @@ model_performance <- function(
 # #' cheem:::global_view_df_1layer(X)
 global_view_df_1layer <- function(
   x,
-  class      = NULL, ## required for olda
-  basis_type = c("pca", "olda"),
-  label      = "label"
+  class = NULL,
+  label = "label"
 ){
   d <- 2 ## Fixed display dimensionality
-  basis_type <- match.arg(basis_type)
   if(is.null(class)) class <- as.factor(FALSE)
   
   ## Projection
   x_std <- spinifex::scale_01(x)
-  if(basis_type == "olda" & is.null(class))
-    stop("Basis type was olda without a class, a class must be provided for olda.")
-  basis <- switch(basis_type,
-                  pca  = stats::prcomp(x_std)$rotation[, 1:d],
-                  olda = spinifex::basis_olda(x_std, class, d))
+  basis <- stats::prcomp(x_std)$rotation[, 1:d]
   proj  <- spinifex::scale_01(x_std %*% basis)
   
   ## Column bind wider
-  ret <- data.frame(basis_type, label, 1:nrow(x), class, proj)
-  colnames(ret) <- c("basis_type", "label", "rownum", "class", paste0("V", 1:d))
-  attr(ret, paste0(basis_type, ":", label)) <- basis
+  ret <- data.frame(label, 1:nrow(x), class, proj)
+  colnames(ret) <- c("label", "rownum", "class", paste0("V", 1:d))
+  attr(ret, label) <- basis
   
   ## Return
   ret
@@ -121,6 +104,8 @@ global_view_df_1layer <- function(
 #' 
 #' Performs the preprocessing steps needs to supply the plot functions
 #' `global_view()` and `radial_cheem_tour()` used in the shiny app.
+#' The user need to supply the attributions and predictions. For help getting
+#' started with this see `vignette("getting-started-with-cheem")`.
 #' 
 #' @param x The explanatory variables of the model.
 #' @param y The target variable of the model.
@@ -132,9 +117,6 @@ global_view_df_1layer <- function(
 #' @param label Optionally provide a character label to store reminder 
 #' text for the type of model and local explanation used. 
 #' Defaults to "label".
-#' @param basis_type The type of basis used to approximate the data and 
-#' attribution space from. Defaults to "pca". 
-#' Expects "pca" or "olda" (requires `class`).
 #' @param verbose Logical, if start time and run duration should be printed. 
 #' Defaults to getOption("verbose").
 #' @return A list of data.frames needed for the `shiny` application.
@@ -149,13 +131,20 @@ global_view_df_1layer <- function(
 #' Y    <- spinifex::penguins_na.rm$species
 #' clas <- spinifex::penguins_na.rm$species
 #' 
+#' ## Bring your own attributions and predictions, 
+#' ## for help review the vignette or package down site;
+#' if(FALSE){
+#'   vignette("getting-started-with-cheem")
+#'   browseURL("https://nspyrison.github.io/cheem/articles/getting-started-with-cheem.html")
+#' }
+#' 
 #' ## Cheem
 #' peng_chm <- cheem_ls(X, Y, penguin_xgb_shap, penguin_xgb_pred, clas,
 #'                      label = "Penguins, xgb, shapviz")
 #' 
 #' ## Save for use with shiny app (expects an rds file)
 #' if(FALSE){ ## Don't accidentally save.
-#'   saveRDS(peng_chm, "./peng_xgb_shapviz.rds")
+#'   saveRDS(peng_chm, "./chm_peng_xgb_shapviz.rds")
 #'   run_app() ## Select the saved rds file from the data dropdown.
 #' }
 #' 
@@ -164,8 +153,8 @@ global_view_df_1layer <- function(
 #'   prim <- 1
 #'   comp <- 2
 #'   global_view(peng_chm, primary_obs = prim, comparison_obs = comp)
-#'   bas <- sug_basis(peng_xgb_shap, prim, comp)
-#'   mv  <- sug_manip_var(peng_xgb_shap, primary_obs = 1, comparison_obs = 2)
+#'   bas <- sug_basis(penguin_xgb_shap, prim, comp)
+#'   mv  <- sug_manip_var(penguin_xgb_shap, primary_obs = prim, comp)
 #'   ggt <- radial_cheem_tour(peng_chm, basis = bas, manip_var = mv)
 #'   animate_plotly(ggt)
 #' }
@@ -179,13 +168,20 @@ global_view_df_1layer <- function(
 #' Y    <- dat$SalePrice
 #' clas <- dat$SubclassMS
 #' 
+#' #' ## Bring your own attributions and predictions, 
+#' ## for help review the vignette or package down site;
+#' if(FALSE){
+#'   vignette("getting-started-with-cheem")
+#'   browseURL("https://nspyrison.github.io/cheem/articles/getting-started-with-cheem.html")
+#' }
+#' 
 #' ## Cheem list
 #' ames_rf_chm <- cheem_ls(X, Y, ames_rf_shap, ames_rf_pred, clas,
 #'                         label = "North Ames, RF, treeshap")
 #' 
 #' ## Save for use with shiny app (expects an rds file)
 #' if(FALSE){ ## Don't accidentally save.
-#'   saveRDS(ames_rf_chm, "./NAmes_rf_tshap.rds")
+#'   saveRDS(ames_rf_chm, "./chm_NAmes_rf_tshap.rds")
 #'   run_app() ## Select the saved rds file from the data drop down.
 #' }
 #' 
@@ -195,7 +191,7 @@ global_view_df_1layer <- function(
 #'   comp <- 2
 #'   global_view(ames_rf_chm, primary_obs = prim, comparison_obs = comp)
 #'   bas <- sug_basis(ames_rf_shap, prim, comp)
-#'   mv  <- sug_manip_var(ames_rf_shap, primary_obs = 1, comparison_obs = 2)
+#'   mv  <- sug_manip_var(ames_rf_shap, primary_obs = prim, comp)
 #'   ggt <- radial_cheem_tour(ames_rf_chm, basis = bas, manip_var = mv)
 #'   animate_plotly(ggt)
 #' }
@@ -204,7 +200,6 @@ cheem_ls <- function(
   attr_df,
   pred = NULL,
   class = NULL,
-  basis_type = c("pca", "olda"), ## class req for olda
   label = "label",
   verbose = getOption("verbose")
 ){
@@ -212,7 +207,6 @@ cheem_ls <- function(
   ## Checks
   if(verbose) tictoc::tic("cheem_ls")
   d <- 2 ## Hard coded display dimensionality
-  basis_type <- match.arg(basis_type)
   is_classification <- is_discrete(y)
   x       <- data.frame(x)
   y       <- as.numeric(y)
@@ -220,6 +214,7 @@ cheem_ls <- function(
   attr_df <- data.frame(attr_df)
   stopifnot("data.frame" %in% class(x))
   stopifnot("data.frame" %in% class(attr_df))
+
   if(any(apply(attr_df, 2, function(i) length(unique(i)) == 1)))
     stop(paste0(
       "cheem_ls: ", label,
@@ -228,12 +223,20 @@ cheem_ls <- function(
       " Please review model complexity and attr_df."))
 
   ## global_view_df -----
-  .glob_dat  <- global_view_df_1layer(x, class, basis_type, "data")
-  .glob_attr <- global_view_df_1layer(attr_df, class, basis_type, "attribution")
+  .pca_var <- stats::prcomp(spinifex::scale_01(x))$sdev^2
+  .var_exp <- round(100*.pca_var/sum(.pca_var), 0)
+  .glob_dat  <- global_view_df_1layer(
+    x, class,
+    paste0("data, PC1 (", .var_exp[1], "%) by PC2 (", .var_exp[2], "%)"))
+  .pca_var <- stats::prcomp(spinifex::scale_01(attr_df))$sdev^2
+  .var_exp <- round(100*.pca_var/sum(.pca_var), 0)
+  .glob_attr <- global_view_df_1layer(
+    attr_df, class, 
+    paste0("attribution, PC1 (", .var_exp[1], "%) by PC2 (", .var_exp[2], "%)"))
   .glob_view <- rbind(.glob_dat, .glob_attr)
   ## List of the bases
-  .dat_bas   <- utils::tail(attributes(.glob_dat),  1)
-  .attr_bas  <- utils::tail(attributes(.glob_attr), 1)
+  .dat_bas  <- utils::tail(attributes(.glob_dat),  1)
+  .attr_bas <- utils::tail(attributes(.glob_attr), 1)
   .glob_basis_ls <- c(.dat_bas, .attr_bas)
   ## log maha distance of data space
   log_maha.data <- stats::mahalanobis(x, colMeans(x), stats::cov(x))
@@ -269,25 +272,27 @@ cheem_ls <- function(
     .decode_df, function(c) if(is.numeric(c)) round(c, 2) else c))
   
   if(is_classification){
-    .vec_yjitter  <- stats::runif(nrow(x), -.2, .2)
-    .y_axis_label <- "model (w/ y jitter)"
-  }
-  if(all(is.na(y) | is.null(y))){
-    ## No y/pred
-    .vec_yjitter  <- 0
-    .y_axis_label <- "No y/model provided"
+    .yjitter <- stats::runif(nrow(x), -.2, .2)
+    .xjitter <- stats::runif(nrow(x), -.2, .2)
+    .y_axis_label <- "model confusion matrix, pred by obs"
   }else{
-    ## Regression
-    .vec_yjitter  <- 0
-    .y_axis_label <- "model"
+    if(all(is.na(y) | is.null(y))){
+      ## No y/pred
+      .yjitter <- .xjitter <- 0
+      .y_axis_label <- "No y/model provided"
+    }else{
+      ## Regression
+      .yjitter <- .xjitter <- 0
+      .y_axis_label <- "model residuals, pred by obs"
+    }
   }
   
   ## append yhaty to global_view_df ----
   .yhaty_df <-
-    data.frame(V1 = .decode_df$prediction, 
-               V2 = as.numeric(.decode_df$y) + .vec_yjitter) %>%
+    data.frame(V1 = .decode_df$prediction + .xjitter, 
+               V2 = as.numeric(.decode_df$y) + .yjitter) %>%
     spinifex::scale_01()
-  .yhaty_df <- data.frame(basis_type = NA, label = .y_axis_label,
+  .yhaty_df <- data.frame(label = .y_axis_label,
                           rownum = 1:nrow(x), class = .decode_df$class, .yhaty_df)
   .glob_view <- rbind(.glob_view, .yhaty_df)
   
@@ -318,7 +323,6 @@ cheem_ls <- function(
   .glob_view$tooltip           <- rep_len(tooltip,             .N)
   .decode_df$tooltip           <- tooltip
   ## Ensure facet order is kept.
-  .glob_view$basis_type <- factor(.glob_view$basis_type, unique(.glob_view$basis_type))
   .glob_view$label      <- factor(.glob_view$label, unique(.glob_view$label))
   
   ## Cleanup and return

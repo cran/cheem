@@ -1,13 +1,9 @@
-## Setup ------
 {
-  set.seed(20211105)
-  X <- data.frame(x1 = runif(200, 0, 5),
-                  x2 = runif(200, 0, 5),
-                  x3 = runif(200, 0, 5),
-                  x4 = runif(200, 0, 5),
-                  x5 = runif(200, 0, 5))
-  Y <- X$x1 + X$x2 + (X$x1 * X$x2) + .1 * X$x3 + .1 * X$x4 + .1 * X$x5 + rnorm(200)
-  clas <- NULL
+  dat  <- amesHousing2018_NorthAmes
+  X    <- dat[, 1:9]
+  colnames(X) <- c("LtA", "Qlt", "YrB", "LvA", "Bth", "Bdr", "Rms", "GYB", "GrA")
+  Y    <- dat$SalePrice
+  clas <- amesHousing2018_NorthAmes$SubclassMS ## class is a zone subclass
 }
 
 rf_fit <- randomForest::randomForest(
@@ -18,12 +14,13 @@ rf_pred <- predict(rf_fit, X)
 rf_shap <- treeshap::treeshap(
   treeshap::randomForest.unify(rf_fit, X), X, FALSE, FALSE)
 rf_shap <- rf_shap$shaps
+
 chm <- cheem_ls(X, Y, rf_shap, rf_pred, clas,
-                label = "Toy quadratic regression, RF, treeshap")
+                label = "North Ames, RF, treeshap")
 
 ## Export ----
-NM <- "preprocess_toy_quad_regression.rds"
-saveRDS(chm, file = paste0("~/R/cheem/inst/shiny_apps/cheem/data/", NM))
+NM <- "preprocess_ames2018.rds"
+saveRDS(chm, file = paste0("./inst/shiny_apps/cheem/data/", NM))
 cat("Saved", NM, "\n")
 
 if(F){

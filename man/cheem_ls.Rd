@@ -10,7 +10,6 @@ cheem_ls(
   attr_df,
   pred = NULL,
   class = NULL,
-  basis_type = c("pca", "olda"),
   label = "label",
   verbose = getOption("verbose")
 )
@@ -28,10 +27,6 @@ attributions.}
 \item{class}{Optional, (n, 1) vector, a variable to group points by.
 This can be the same as or different from \code{y}, the target variable.}
 
-\item{basis_type}{The type of basis used to approximate the data and
-attribution space from. Defaults to "pca".
-Expects "pca" or "olda" (requires \code{class}).}
-
 \item{label}{Optionally provide a character label to store reminder
 text for the type of model and local explanation used.
 Defaults to "label".}
@@ -45,6 +40,8 @@ A list of data.frames needed for the \code{shiny} application.
 \description{
 Performs the preprocessing steps needs to supply the plot functions
 \code{global_view()} and \code{radial_cheem_tour()} used in the shiny app.
+The user need to supply the attributions and predictions. For help getting
+started with this see \code{vignette("getting-started-with-cheem")}.
 }
 \examples{
 library(cheem)
@@ -54,13 +51,20 @@ X    <- spinifex::penguins_na.rm[, 1:4]
 Y    <- spinifex::penguins_na.rm$species
 clas <- spinifex::penguins_na.rm$species
 
+## Bring your own attributions and predictions, 
+## for help review the vignette or package down site;
+if(FALSE){
+  vignette("getting-started-with-cheem")
+  browseURL("https://nspyrison.github.io/cheem/articles/getting-started-with-cheem.html")
+}
+
 ## Cheem
 peng_chm <- cheem_ls(X, Y, penguin_xgb_shap, penguin_xgb_pred, clas,
                      label = "Penguins, xgb, shapviz")
 
 ## Save for use with shiny app (expects an rds file)
 if(FALSE){ ## Don't accidentally save.
-  saveRDS(peng_chm, "./peng_xgb_shapviz.rds")
+  saveRDS(peng_chm, "./chm_peng_xgb_shapviz.rds")
   run_app() ## Select the saved rds file from the data dropdown.
 }
 
@@ -69,8 +73,8 @@ if(interactive()){
   prim <- 1
   comp <- 2
   global_view(peng_chm, primary_obs = prim, comparison_obs = comp)
-  bas <- sug_basis(peng_xgb_shap, prim, comp)
-  mv  <- sug_manip_var(peng_xgb_shap, primary_obs = 1, comparison_obs = 2)
+  bas <- sug_basis(penguin_xgb_shap, prim, comp)
+  mv  <- sug_manip_var(penguin_xgb_shap, primary_obs = prim, comp)
   ggt <- radial_cheem_tour(peng_chm, basis = bas, manip_var = mv)
   animate_plotly(ggt)
 }
@@ -84,13 +88,20 @@ X    <- dat[, 1:9]
 Y    <- dat$SalePrice
 clas <- dat$SubclassMS
 
+#' ## Bring your own attributions and predictions, 
+## for help review the vignette or package down site;
+if(FALSE){
+  vignette("getting-started-with-cheem")
+  browseURL("https://nspyrison.github.io/cheem/articles/getting-started-with-cheem.html")
+}
+
 ## Cheem list
 ames_rf_chm <- cheem_ls(X, Y, ames_rf_shap, ames_rf_pred, clas,
                         label = "North Ames, RF, treeshap")
 
 ## Save for use with shiny app (expects an rds file)
 if(FALSE){ ## Don't accidentally save.
-  saveRDS(ames_rf_chm, "./NAmes_rf_tshap.rds")
+  saveRDS(ames_rf_chm, "./chm_NAmes_rf_tshap.rds")
   run_app() ## Select the saved rds file from the data drop down.
 }
 
@@ -100,7 +111,7 @@ if(interactive()){
   comp <- 2
   global_view(ames_rf_chm, primary_obs = prim, comparison_obs = comp)
   bas <- sug_basis(ames_rf_shap, prim, comp)
-  mv  <- sug_manip_var(ames_rf_shap, primary_obs = 1, comparison_obs = 2)
+  mv  <- sug_manip_var(ames_rf_shap, primary_obs = prim, comp)
   ggt <- radial_cheem_tour(ames_rf_chm, basis = bas, manip_var = mv)
   animate_plotly(ggt)
 }

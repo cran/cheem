@@ -40,24 +40,9 @@ server <- function(input, output, session){
                error = function(e) stop(safeError(e)))
     }
     
-    ## SIDE EFFECT: Update prim/comp_inst
-    # updateNumericInput(
-    #   session, "primary_inst",
-    #   label = "Primary instance rownum, ('*' point):",
-    #   min = 1, max = 1e6, step = 1, value = prim_inst)
-    # updateNumericInput(
-    #   session, "comparison_inst",
-    #   label = "Comparison instance rownum, ('x' point):",
-    #   min = 1, max = 1e6, step = 1, value = comp_inst)
-    # ## SIDE EFFECT: Update inclusion feature names
-    # feat_nms <- colnames(ret$attr_df)
-    # updateCheckboxGroupInput(session, "inc_feat_nms", label = "features to include:",
-    #                          choices = feat_nms, selected = feat_nms, inline = TRUE)
-    
     ## Return loaded cheem_ls
     ret
   })
-
   
   
   ### bas ----
@@ -84,8 +69,6 @@ server <- function(input, output, session){
     unique(as.integer(.d$key))
   })
   
-  ### perf_df ----
-
   ### cheem_ggtour -----
   cheem_ggtour <- reactive({
     dev_cat("top of cheem_ggtour")
@@ -98,9 +81,6 @@ server <- function(input, output, session){
     inc_feat_nms <- req(input$inc_feat_nms)
     idx_rownum   <- sel_rownums() ## NULL is no selection; all points
     #idx_rownum   <- NULL ## all points
-    ## sel_rownums() is leading to a hard to explore plotly method error:
-    # Error: object 'x' not found
-    ## abandoning and defaulting to full selection.
     
     if(mv_nm %in% rownames(bas) == FALSE){
       cheem:::devMessage(paste0(
@@ -111,13 +91,9 @@ server <- function(input, output, session){
     mv <- which(rownames(bas) == mv_nm)
     radial_cheem_tour(
       cheem_ls, bas, mv, prim_inst, comp_inst, do_add_pcp_segments = add_pcp,
-      angle = .15, row_index = idx_rownum, inc_var_nms = inc_feat_nms)
-  }) %>%
-    ## Leaving load_ls out; only load when all are ready
-    bindCache(bas, input$primary_inst, input$comparison_inst,
-              input$manip_feat_nm, input$do_add_pcp_segments) %>%
-    bindEvent(bas, input$primary_inst, input$comparison_inst,
-              input$manip_feat_nm, input$do_add_pcp_segments) #%>% debounce(millis = 500L)
+      angle = .10, row_index = idx_rownum, inc_var_nms = inc_feat_nms, 
+      pcp_shape = 142)
+  })
   
   
   ## Observe/event -----
@@ -127,50 +103,50 @@ server <- function(input, output, session){
     dev_cat("top of observeEvent(req(input$dat_char)")
     dat <- req(input$dat_char)
     if(dat == "toy classification"){
-      prim_inst <- 36
-      comp_inst <- 23
+      prim_inst <- 118
+      comp_inst <- 135
     }else if(dat == "penguins classification"){
-      prim_inst <- 243 ## Presubmission seminar looked at 124, 86
+      prim_inst <- 243
       comp_inst <- 169
     }else if(dat == "chocolates classification"){
-      prim_inst <- 22
-      comp_inst <- 7
+      prim_inst <- 64
+      comp_inst <- 83
     }else if(dat == "toy quad regression"){
-      prim_inst <- 11
-      comp_inst <- 121
+      prim_inst <- 100
+      comp_inst <- 188
     }else if(dat == "toy trig regression"){
-      prim_inst <- 87
-      comp_inst <- 102
+      prim_inst <- 180
+      comp_inst <- 167
     }else if(dat == "toy mixture model regression"){
-      prim_inst <- 23
-      comp_inst <- 130
+      prim_inst <- 127
+      comp_inst <- 220
     }else if(dat == "fifa regression"){
       prim_inst <- 1
       comp_inst <- 8
     }else if(dat == "ames housing 2018 regression"){
       prim_inst <- 74
-      comp_inst <- 192
+      comp_inst <- 141
     }else{ ## _ie._ user loaded data; no priors of good instance to pick.
       prim_inst <- 1
       comp_inst <- 2
     }
     
+    ## SIDE EFFECT: Update inclusion feature names
     updateNumericInput(
       session, "primary_inst",
-      label = "Primary instance ('*', dashed line below):",
+      label = "Primary instance ('*', dashed line below)",
       min = 1, max = 1e6, step = 1, value = prim_inst)
     updateNumericInput(
       session, "comparison_inst",
-      label = "Comparison instance ('x', dotted line below):",
+      label = "Comparison instance ('x', dotted line below)",
       min = 1, max = 1e6, step = 1, value = comp_inst)
-    ## SIDE EFFECT: Update inclusion feature names
   })
   
   ### update inc_feat_nms -----
   observeEvent(req(load_ls()), {
     dev_cat("top of observeEvent(req(load_ls())")
     feat_nms <- colnames(req(load_ls())$attr_df)
-    updateCheckboxGroupInput(session, "inc_feat_nms", label = "Featurtes to include:",
+    updateCheckboxGroupInput(session, "inc_feat_nms", label = "Featurtes to include",
                              choices = feat_nms, selected = feat_nms, inline = TRUE)
   })
   
@@ -195,7 +171,7 @@ server <- function(input, output, session){
       tourr::orthonormalise()
     mv          <- sug_manip_var(inc_attr_df, .prim_inst, .comp_inst)
     mv_nm       <- colnames(inc_attr_df)[mv]
-    updateSelectInput(session, "manip_feat_nm", label = "Manipulation feature:",
+    updateSelectInput(session, "manip_feat_nm", label = "Manipulation feature",
                       choices = .inc_nms, selected = mv_nm)
   }, priority = 150)
   
@@ -270,36 +246,48 @@ server <- function(input, output, session){
     }
     
     global_view(cheem_ls, .prim_inst, .comp_inst, color = .col,
-                height_px = 540, width_px = 1440)
-  }) %>%
-    bindCache(load_ls(), input$primary_inst, input$comparison_inst,
-              input$glob_view_col) %>%
-    bindEvent(load_ls(), input$primary_inst, input$comparison_inst,
-              input$glob_view_col)# %>%
-    #debounce(millis = 200)
+                height_px = 338, width_px = 1000)
+  })
+
   ## Lazy eval, heavy work, let the other stuff calculate first.
-  output$global_view <- plotly::renderPlotly(suppressWarnings(glob_view()))
+  output$global_view <- plotly::renderPlotly({
+    input$load_ls
+    input$go_global_view
+    
+    if(input$go_global_view > -1)
+      return(isolate({
+      suppressWarnings(glob_view())
+    }))
+  })
   
   ### plotly tour -----
   output$cheem_tour_plotly <- plotly::renderPlotly({
-    cheem_ls <- req(load_ls())
-    ggt <- req(cheem_ggtour())
+    ## update on go button, but not other.
+    input$load_ls
+    #input$go_global_view
+    input$go_tour
     
-    .anim <- ggt %>%
-      spinifex::animate_plotly(fps = 4) %>%
-      plotly::layout(showlegend = FALSE) %>%
-      plotly::style(hoverinfo = "none")
-    ## the following hasn't helped:
-    #### %>% plotly::toWebGL() & plotly::partial_bundle(), not reliably faster and may increase visual issues.
-    #### - starting at frame 11 doesn't get around frame 1 sometimes being skipped.
-    #### - redundantly hiding gridlines in plotly doesn't remove them.
-    .anim
+    return(isolate({
+      cheem_ls <- req(load_ls())
+      ggt <- req(cheem_ggtour())
+      
+      .anim <- ggt %>%
+        spinifex::animate_plotly(fps = 4) %>%
+        plotly::layout(showlegend = FALSE) %>%
+        plotly::style(hoverinfo = "none")
+      ## the following hasn't helped:
+      #### %>% plotly::toWebGL() & plotly::partial_bundle(), not reliably faster and may increase visual issues.
+      .anim
+    }))
   })
   ## Lazy eval, heavy work, let the other stuff calculate first.
   
   output$perf_df <- renderTable({
-    df <- req(load_ls()$model_performance)
-    df %>% dplyr::mutate_if(is.numeric, round, digits = 2)
+    ls <- req(load_ls())
+    if(ls$type == "regression"){
+      ls$model_performance %>%
+        dplyr::mutate_if(is.numeric, round, digits = 2)
+    }
   })
   outputOptions(output, "perf_df",
                 suspendWhenHidden = FALSE, priority = 10) ## Eager evaluation

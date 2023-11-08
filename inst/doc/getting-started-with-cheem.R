@@ -21,8 +21,9 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 #  ## Download if not installed
-#  if(!require(cheem)) install.packages("cheem", dependencies = "Suggests")
-#  if(!require(treeshap)) devtools::install_github("ModelOriented/treeshap")
+#  if(!require(cheem))    install.packages("cheem", dependencies = TRUE)
+#  if(!require(treeshap)) install.packages("treeshap", dependencies = TRUE)
+#  if(!require(shapviz))  install.packages("shapviz", dependencies = TRUE)
 #  ## Load onto session
 #  library(cheem)
 #  library(xgboost)
@@ -51,7 +52,6 @@ knitr::opts_chunk$set(
 #                       class      = clas,
 #                       attr_df    = ames_xgb_shap,
 #                       pred       = ames_xgb_pred,
-#                       basis_type = c("pca"),
 #                       label      = "Ames, xgb, shap")
 #  names(ames_chm)
 
@@ -143,7 +143,7 @@ knitr::opts_chunk$set(
 #  peng_xgb_shap <- peng_xgb_shap$S
 
 ## ---- eval=FALSE, echo=TRUE---------------------------------------------------
-#  if(!require(treeshap)) devtools::install_github("ModelOriented/treeshap")
+#  if(!require(treeshap)) install.packages("treeshap")
 #  if(!require(randomForest)) install.packages("randomForest")
 #  library(treeshap)
 #  library(randomForest)
@@ -158,12 +158,12 @@ knitr::opts_chunk$set(
 #    X, Y, ntree = 125,
 #    mtry = ifelse(is_discrete(Y), sqrt(ncol(X)), ncol(X) / 3),
 #    nodesize = max(ifelse(is_discrete(Y), 1, 5), nrow(X) / 500))
-#  wine_rf_pred <- predict(pid_rf_fit)
+#  wine_rf_pred <- predict(wine_rf_fit)
 #  
 #  ## treeshap::treeshap()
-#  wine_rf_tshap <- pid_rf_fit %>%
-#    treeshap::randomForest.unify(x) %>%
-#    treeshap::treeshap(x, interactions = FALSE, verbose = FALSE)
+#  wine_rf_tshap <- wine_rf_fit %>%
+#    treeshap::randomForest.unify(X) %>%
+#    treeshap::treeshap(X, interactions = FALSE, verbose = FALSE)
 #  ## Keep just the [n, p] local explanations
 #  wine_rf_tshap <- wine_rf_tshap$shaps
 
@@ -183,7 +183,7 @@ knitr::opts_chunk$set(
 #  ## SHAP via DALEX, versatile but slow
 #  drag_lm_exp <- explain(drag_lm_fit, data = X, y = Y,
 #                         label = "Dragons, LM, SHAP")
-#  ## Note that cheem expects a full [n, p] attribution space
+#  ## DALEX::predict_parts_shap is flexible, but slow and one row at a time
 #  drag_lm_shap <- matrix(NA, nrow(X), ncol(X))
 #  sapply(1:nrow(X), function(i){
 #    pps <- predict_parts_shap(drag_lm_exp, new_observation = X[i, ])

@@ -14,6 +14,7 @@
 #' library(cheem)
 #' library(xgboost)
 #' library(shapviz)
+#' set.seed(135)
 #' 
 #' ## Classification setup
 #' X    <- spinifex::penguins_na.rm[, 1:4]
@@ -23,7 +24,7 @@
 #' ## Model and predict
 #' peng_train    <- data.matrix(X) %>%
 #'   xgb.DMatrix(label = Y)
-#' peng_xgb_fit  <- xgboost(data = peng_train, max.depth = 3, nrounds = 25)
+#' peng_xgb_fit  <- xgboost(data = peng_train, max.depth = 3, nrounds = 5)
 #' penguin_xgb_pred <- predict(peng_xgb_fit, newdata = peng_train)
 #' 
 #' ## shapviz
@@ -56,7 +57,7 @@
 #' 
 #' ## Save for use with shiny app (expects an rds file)
 #' if(FALSE){ ## Don't accidentally save.
-#'   saveRDS(peng_chm, "./peng_xgb_shapviz.rds")
+#'   saveRDS(peng_chm, "./chm_peng_xgb_shapviz.rds")
 #'   run_app() ## Select the saved rds file from the data dropdown.
 #' }
 #' 
@@ -65,8 +66,8 @@
 #'   prim <- 1
 #'   comp <- 2
 #'   global_view(peng_chm, primary_obs = prim, comparison_obs = comp)
-#'   bas <- sug_basis(peng_xgb_shap, prim, comp)
-#'   mv  <- sug_manip_var(peng_xgb_shap, primary_obs = 1, comparison_obs = 2)
+#'   bas <- sug_basis(penguin_xgb_shap, prim, comp)
+#'   mv  <- sug_manip_var(penguin_xgb_shap, primary_obs = prim, comp)
 #'   ggt <- radial_cheem_tour(peng_chm, basis = bas, manip_var = mv)
 #'   animate_plotly(ggt)
 #' }
@@ -92,6 +93,7 @@
 #' library(cheem)
 #' library(e1071)
 #' library(DALEX)
+#' set.seed(135)
 #' 
 #' ## Classification setup
 #' X    <- chocolates[, 5:14]
@@ -108,8 +110,8 @@
 #' choc_svm_exp <- explain(choc_svm_fit, data = X, y = Y,
 #'                         label = "Chocolates, svm")
 #' ## Note that cheem expects a full [n, p] attribution space
+#' ## Shap takes about ~30-40 sec for me
 #' chocolates_svm_shap <- matrix(NA, nrow(X), ncol(X)) ## init a df of the same structure
-#' tictoc::tic("choc svm DALEX shap")
 #' sapply(1:nrow(X), function(i){
 #'   pps <- predict_parts_shap(choc_svm_exp, new_observation = X[i, ])
 #'   ## Keep just the [n, p] local explanations
@@ -117,7 +119,6 @@
 #'     pps$contribution, pps$variable, mean, na.rm = TRUE) %>% as.vector()
 #' })
 #' chocolates_svm_shap <- as.data.frame(chocolates_svm_shap)
-#' tictoc::toc() ## ~35-40 sec for me
 #' 
 #' if(F){ ## Don't accidentally save
 #'   save(chocolates_svm_pred, file = "./data/chocolates_svm_pred.rda")
@@ -146,7 +147,7 @@
 #' 
 #' ## Save for use with shiny app (expects an rds file)
 #' if(FALSE){ ## Don't accidentally save.
-#'   saveRDS(choc_chm, "./chocolates_svm_shap.rds")
+#'   saveRDS(choc_chm, "./cmh_chocolates_svm_shap.rds")
 #'   run_app() ## Select the saved rds file from the data dropdown.
 #' }
 #' 
@@ -154,10 +155,10 @@
 #' if(interactive()){
 #'   prim <- 1
 #'   comp <- 2
-#'   global_view(peng_chm, primary_obs = prim, comparison_obs = comp)
-#'   bas <- sug_basis(peng_xgb_shap, prim, comp)
-#'   mv  <- sug_manip_var(peng_xgb_shap, primary_obs = 1, comparison_obs = 2)
-#'   ggt <- radial_cheem_tour(peng_chm, basis = bas, manip_var = mv)
+#'   global_view(choc_chm, primary_obs = prim, comparison_obs = comp)
+#'   bas <- sug_basis(chocolates_svm_shap, prim, comp)
+#'   mv  <- sug_manip_var(chocolates_svm_shap, primary_obs = prim, comp)
+#'   ggt <- radial_cheem_tour(choc_chm, basis = bas, manip_var = mv)
 #'   animate_plotly(ggt)
 #' }
 "chocolates_svm_pred"
@@ -182,6 +183,7 @@
 #' library(cheem)
 #' library(randomForest)
 #' library(treeshap)
+#' set.seed(135)
 #' 
 #' ## Regression setup
 #' dat  <- amesHousing2018_NorthAmes
@@ -226,7 +228,7 @@
 #' 
 #' ## Save for use with shiny app (expects an rds file)
 #' if(FALSE){ ## Don't accidentally save.
-#'   saveRDS(ames_chm, "./ames_rf_tshap.rds")
+#'   saveRDS(ames_chm, "./chm_ames_rf_tshap.rds")
 #'   run_app() ## Select the saved rds file from the data dropdown.
 #' }
 #' 
@@ -236,7 +238,7 @@
 #'   comp <- 2
 #'   global_view(ames_chm, primary_obs = prim, comparison_obs = comp)
 #'   bas <- sug_basis(ames_rf_shap, prim, comp)
-#'   mv  <- sug_manip_var(ames_rf_shap, primary_obs = 1, comparison_obs = 2)
+#'   mv  <- sug_manip_var(ames_rf_shap, primary_obs = prim, comp)
 #'   ggt <- radial_cheem_tour(ames_chm, basis = bas, manip_var = mv)
 #'   animate_plotly(ggt)
 #' }

@@ -15,16 +15,33 @@
 #' @examples
 #' library(cheem)
 #'
-#' ## Regression setup
+#' ## Attribution basis of the primary instance
+#' sug_basis(ames_rf_shap, rownum = 1)
+#' 
+#' 
+#' ## This can be used to find a basis to start the radial tour.
+#' # ?radial_cheem_tour
+#' 
+#' ## Regression setup:
 #' dat  <- amesHousing2018_NorthAmes
 #' X    <- dat[, 1:9]
 #' Y    <- dat$SalePrice
 #' clas <- dat$SubclassMS
-#'
-#' ## Attribution basis of one obs
-#' sug_basis(ames_rf_shap, rownum = 1)
-#' ## This can be used to find a basis to start the radial tour.
-#' # ?radial_cheem_tour
+#' 
+#' ## radial_cheem_tour()
+#' ames_rf_chm <- cheem_ls(X, Y, ames_rf_shap, ames_rf_pred, clas,
+#'                         label = "North Ames, RF, SHAP")
+#' bas <- sug_basis(ames_rf_shap, 1)
+#' mv  <- sug_manip_var(ames_rf_shap, 1, 2)
+#' ggt <- radial_cheem_tour(ames_rf_chm, basis = bas, manip_var = mv)
+#' if(interactive()){
+#'   ## As a plotly html widget
+#'   spinifex::animate_plotly(ggt)
+#'   
+#'   ## As a gganimation
+#'   spinifex::animate_gganimate(ggt, render = gganimate::av_renderer())
+#' }
+#' ## radial_cheem_tour is also used in: ?run_app()
 sug_basis <- function(
   attr_df,
   rownum
@@ -81,14 +98,14 @@ sug_manip_var <- function(attr_df, primary_obs, comparison_obs){
 
 #' Adds the distribution of the row local attributions to a ggtour
 #'
-#' A {spinifex} proto_*-like function, that adds the distribution of 
+#' A `spinifex` proto_*-like function, that adds the distribution of 
 #' orthonormalized row values of the specified local explanation `attr_df`. 
 #' Does not draw the basis bars; use in conjunction with `proto_basis1d()`.
 #'
 #' @param attr_df An data frame, the attributions of a local explanation.
 #' @param group_by Vector to group densities by. Originally _predicted_ class.
 #' @param position The position for the basis, one of: c("top1d", "floor1d",
-#' "bottom1d", "off"). 
+#' "bottom1d", "off").
 #' Defaults to "top1d"; basis above the density curves.
 #' @param pcp_shape The number of the shape character to add. Expects
 #' 3, 142, or 124, '+', '|' in `plotly`, and '|' in `gganimate`, respectively. 
@@ -306,13 +323,10 @@ proto_basis1d_distribution <- function(
 # #' ## Cheem visual
 # #' ames_rf_chm <- cheem_ls(X, Y, ames_rf_shap, ames_rf_pred, clas,
 # #'                         label = "North Ames, RF, SHAP")
-# #' if(interactive()){
-# #'   global_view(ames_rf_chm) ## Preview spaces
-# #' }
 # #' 
 # #' ## Other global_view() options
 # #' if(interactive()){
-# #'   global_view_legwork(ames_rf_chm) ## most of the way there
+# #'   cheem:::global_view_legwork(ames_rf_chm) ## most of the way there
 # #'   global_view(ames_rf_chm, as_ggplot = TRUE) ## early return of ggplot
 # #'   global_view(ames_rf_chm) ## uses ggplot facets %>% plotly
 # #' 
@@ -326,11 +340,10 @@ global_view_legwork <- function(
     primary_obs    = NULL,
     comparison_obs = NULL,
     color          = c("default", "residual", "log_maha.data", "cor_attr_proj.y")
-    #,subplot_r_ind  = NULL ## May be needed with subplots.
 ){
   ## Prevent global variable warnings:
-  V1 <- V2 <- ggtext <- projection_nm <- label <- tooltip <- NULL
-  height_px <- width_px <- 
+  V1 <- V2 <- ggtext <- projection_nm <- label <- tooltip <-
+    height_px <- width_px <- NULL
   ## Initialize
   global_view_df <- cheem_ls$global_view_df
   prob_type      <- cheem_ls$type
@@ -450,7 +463,6 @@ global_view_legwork <- function(
 #' ames_rf_chm <- cheem_ls(X, Y, ames_rf_shap, ames_rf_pred, clas,
 #'                         label = "North Ames, RF, SHAP")
 #' if(interactive()){
-#'   cheem:::global_view_legwork(ames_rf_chm) ## most of the way there
 #'   global_view(ames_rf_chm, as_ggplot = TRUE) ## early return of ggplot
 #'   global_view(ames_rf_chm) ## uses ggplot facets %>% plotly
 #' 
@@ -469,15 +481,9 @@ global_view <- function(
   width_px       = 1440,
   as_ggplot      = FALSE
 ){
-  label <- NULL ## get in from of global variable NOTE
+  label <- NULL ## Ignore global variable, get it from labels in the data.
   gg <- global_view_legwork(cheem_ls, primary_obs, comparison_obs, color) +
     ggplot2::facet_grid(cols = ggplot2::vars(label))
-  ## adding facet_grid causes: 
-  # Error in ggplot2::geom_smooth(ggplot2::aes(V1, V2), subset(global_view_df,  : 
-  # Problem while computing stat.
-  # ℹ Error occurred in the 1st layer.
-  # Caused by error in `seq_len()`:
-  #   ! argument must be coercible to non-negative integer
   if(as_ggplot) return(gg + ggplot2::theme(aspect.ratio = 1))
   
   ## Plotly options & box selection
@@ -487,11 +493,7 @@ global_view <- function(
     plotly::layout(dragmode = "select", showlegend = FALSE) %>% ## Set drag left mouse
     plotly::event_register("plotly_selected") %>%               ## Reflect "selected", on release of the mouse button.
     plotly::highlight(on = "plotly_selected", off = "plotly_deselect") %>%
-    suppressWarnings() 
-  ## attempt to suppress:
-  #Warning: The following aesthetics were dropped during statistical transformation: x_plotlyDomain, y_plotlyDomain
-  #??? This can happen when ggplot fails to infer the correct grouping structure in the data.
-  #??? Did you forget to specify a `group` aesthetic or to convert a numerical variable into a factor?
+    suppressWarnings()
 }
 
 
@@ -599,26 +601,25 @@ radial_cheem_tour <- function(
   ### Classification case -----
   if(.prob_type == "classification"){
     .pred_clas <- decode_df$predicted_class
+    .facet_fore <- rep("attribution projection", each = .n)
     ## ggtour
     ggt <- spinifex::ggtour(.mt_path, .dat, angle = angle,
                             do_center_frame = do_center_frame) +
+      spinifex::facet_wrap_tour(facet_var = .facet_fore, nrow = 1) +
       ## Density
       spinifex::proto_density(
         aes_args = list(color = .pred_clas, fill = .pred_clas),
         row_index = row_index, rug_shape = pcp_shape) +
-      
-      #Warning message:
-      #In Ops.factor(yscale, x[, 2]) : '*' not meaningful for factors
       ## PCP on Basis, 1D
       proto_basis1d_distribution(
         cheem_ls$attr_df,
         primary_obs = .prim_obs, comparison_obs = .comp_obs,
-        position = "bottom1d", group_by = .pred_clas,
+        position = "floor1d", group_by = .pred_clas,
         do_add_pcp_segments = as.logical(do_add_pcp_segments),
         pcp_shape = pcp_shape, inc_var_nms = inc_var_nms,
        row_index = row_index) +
       ## Basis 1D
-      spinifex::proto_basis1d(position = "bottom1d", manip_col = "black") +
+      spinifex::proto_basis1d(position = "floor1d", manip_col = "black") +
       spinifex::proto_origin1d() +
       ## Highlight comparison obs
       spinifex::proto_highlight1d(
@@ -656,7 +657,7 @@ radial_cheem_tour <- function(
       ## Foreground:
       .dat_fore   <- rbind(.dat, .dat)
       .idx_fore   <- c(row_index, row_index)
-      .facet_fore <- factor(rep(c("observed y", "residual"), each = 2 * .n))
+      .facet_fore <- factor(rep(c("attribution projection by observed y", "attribution projection by residual"), each = 2 * .n))
       .fixed_y    <- c(.y, .resid)
     } else {
       ## not doubled up data; just fixed_observed y
@@ -667,7 +668,7 @@ radial_cheem_tour <- function(
       ## Foreground:
       .dat_fore   <- .dat
       .idx_fore   <- row_index
-      .facet_fore <- rep("observed y", each = .n)
+      .facet_fore <- rep("attribution projection by observed y", each = .n)
       .class_fore <- .class
       .fixed_y    <- .y
     }

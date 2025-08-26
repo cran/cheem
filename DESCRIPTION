@@ -1,6 +1,6 @@
 Package: cheem
 Title: Interactively Explore Local Explanations with the Radial Tour
-Version: 0.4.0.0
+Version: 0.4.1
 Authors@R: c(
   person("Nicholas", "Spyrison", role = c("aut", "cre"),
     email = "spyrison@gmail.com",
@@ -30,8 +30,9 @@ RoxygenNote: 7.2.3
 Language: en-US
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2023-11-08 18:12:02 UTC; nxs9837
-Author: Nicholas Spyrison [aut, cre] (<https://orcid.org/0000-0002-8417-0212>)
+Packaged: 2025-08-26 17:54:55 UTC; nxs9837
+Author: Nicholas Spyrison [aut, cre] (ORCID:
+    <https://orcid.org/0000-0002-8417-0212>)
 Maintainer: Nicholas Spyrison <spyrison@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-11-08 21:30:02 UTC
+Date/Publication: 2025-08-26 20:00:10 UTC
